@@ -84,7 +84,7 @@ func (p *Process) Name() (string, error) {
 
 func (p *Process) NameWithContext(ctx context.Context) (string, error) {
 	if p.name == "" {
-		if err := p.fillFromStatusWithContext(ctx); err != nil {
+		if _, err := p.fillFromStatusWithContext(ctx); err != nil {
 			return "", err
 		}
 	}
@@ -94,7 +94,7 @@ func (p *Process) NameWithContext(ctx context.Context) (string, error) {
 // Tgid returns tgid, a Linux-synonym for user-space Pid
 func (p *Process) Tgid() (int32, error) {
 	if p.tgid == 0 {
-		if err := p.fillFromStatusWithContext(context.Background()); err != nil {
+		if _, err := p.fillFromStatusWithContext(context.Background()); err != nil {
 			return 0, err
 		}
 	}
@@ -153,7 +153,7 @@ func (p *Process) Parent() (*Process, error) {
 }
 
 func (p *Process) ParentWithContext(ctx context.Context) (*Process, error) {
-	err := p.fillFromStatusWithContext(ctx)
+	_, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (p *Process) Status() (string, error) {
 }
 
 func (p *Process) StatusWithContext(ctx context.Context) (string, error) {
-	err := p.fillFromStatusWithContext(ctx)
+	_, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -208,7 +208,7 @@ func (p *Process) Uids() ([]int32, error) {
 }
 
 func (p *Process) UidsWithContext(ctx context.Context) ([]int32, error) {
-	err := p.fillFromStatusWithContext(ctx)
+	_, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return []int32{}, err
 	}
@@ -221,7 +221,7 @@ func (p *Process) Gids() ([]int32, error) {
 }
 
 func (p *Process) GidsWithContext(ctx context.Context) ([]int32, error) {
-	err := p.fillFromStatusWithContext(ctx)
+	_, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return []int32{}, err
 	}
@@ -295,7 +295,7 @@ func (p *Process) RlimitUsageWithContext(ctx context.Context, gatherUsed bool) (
 	if err != nil {
 		return nil, err
 	}
-	if err := p.fillFromStatusWithContext(ctx); err != nil {
+	if _, err := p.fillFromStatusWithContext(ctx); err != nil {
 		return nil, err
 	}
 
@@ -355,7 +355,7 @@ func (p *Process) NumCtxSwitches() (*NumCtxSwitchesStat, error) {
 }
 
 func (p *Process) NumCtxSwitchesWithContext(ctx context.Context) (*NumCtxSwitchesStat, error) {
-	err := p.fillFromStatusWithContext(ctx)
+	_, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -378,7 +378,7 @@ func (p *Process) NumThreads() (int32, error) {
 }
 
 func (p *Process) NumThreadsWithContext(ctx context.Context) (int32, error) {
-	err := p.fillFromStatusWithContext(ctx)
+	_, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -439,7 +439,7 @@ func (p *Process) MemoryInfo() (*MemoryInfoStat, error) {
 }
 
 func (p *Process) MemoryInfoWithContext(ctx context.Context) (*MemoryInfoStat, error) {
-	meminfo, _, err := p.fillFromStatmWithContext(ctx)
+	meminfo, err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -948,12 +948,12 @@ func (p *Process) fillFromStatmWithContext(ctx context.Context) (*MemoryInfoStat
 }
 
 // Get various status from /proc/(pid)/status
-func (p *Process) fillFromStatusWithContext(ctx context.Context) error {
+func (p *Process) fillFromStatusWithContext(ctx context.Context) (*MemoryInfoStat, error) {
 	pid := p.Pid
 	statPath := common.HostProc(strconv.Itoa(int(pid)), "status")
 	contents, err := ioutil.ReadFile(statPath)
 	if err != nil {
-		return err
+		return nil,err
 	}
 	lines := strings.Split(string(contents), "\n")
 	p.numCtxSwitches = &NumCtxSwitchesStat{}
@@ -971,7 +971,7 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) error {
 			if len(p.name) >= 15 {
 				cmdlineSlice, err := p.CmdlineSlice()
 				if err != nil {
-					return err
+					return p.memInfo,err
 				}
 				if len(cmdlineSlice) > 0 {
 					extendedName := filepath.Base(cmdlineSlice[0])
@@ -987,13 +987,13 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) error {
 		case "PPid", "Ppid":
 			pval, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.parent = int32(pval)
 		case "Tgid":
 			pval, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.tgid = int32(pval)
 		case "Uid":
@@ -1001,7 +1001,7 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) error {
 			for _, i := range strings.Split(value, "\t") {
 				v, err := strconv.ParseInt(i, 10, 32)
 				if err != nil {
-					return err
+					return p.memInfo,err
 				}
 				p.uids = append(p.uids, int32(v))
 			}
@@ -1010,111 +1010,111 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) error {
 			for _, i := range strings.Split(value, "\t") {
 				v, err := strconv.ParseInt(i, 10, 32)
 				if err != nil {
-					return err
+					return p.memInfo,err
 				}
 				p.gids = append(p.gids, int32(v))
 			}
 		case "Threads":
 			v, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.numThreads = int32(v)
 		case "voluntary_ctxt_switches":
 			v, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.numCtxSwitches.Voluntary = v
 		case "nonvoluntary_ctxt_switches":
 			v, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.numCtxSwitches.Involuntary = v
 		case "VmRSS":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.RSS = v * 1024
 		case "VmSize":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.VMS = v * 1024
 		case "VmSwap":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.Swap = v * 1024
 		case "VmHWM":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.HWM = v * 1024
 		case "VmData":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.Data = v * 1024
 		case "VmStk":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.Stack = v * 1024
 		case "VmLck":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.memInfo.Locked = v * 1024
 		case "SigPnd":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.sigInfo.PendingThread = v
 		case "ShdPnd":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.sigInfo.PendingProcess = v
 		case "SigBlk":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.sigInfo.Blocked = v
 		case "SigIgn":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.sigInfo.Ignored = v
 		case "SigCgt":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return err
+				return p.memInfo,err
 			}
 			p.sigInfo.Caught = v
 		}
 
 	}
-	return nil
+	return p.memInfo,nil
 }
 
 func (p *Process) fillFromTIDStatWithContext(ctx context.Context, tid int32) (uint64, int32, *cpu.TimesStat, int64, uint32, int32, *PageFaultsStat, error) {
