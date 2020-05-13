@@ -953,7 +953,7 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) (*MemoryInfoSta
 	statPath := common.HostProc(strconv.Itoa(int(pid)), "status")
 	contents, err := ioutil.ReadFile(statPath)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	lines := strings.Split(string(contents), "\n")
 	p.numCtxSwitches = &NumCtxSwitchesStat{}
@@ -971,7 +971,7 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) (*MemoryInfoSta
 			if len(p.name) >= 15 {
 				cmdlineSlice, err := p.CmdlineSlice()
 				if err != nil {
-					return p.memInfo,err
+					return p.memInfo, err
 				}
 				if len(cmdlineSlice) > 0 {
 					extendedName := filepath.Base(cmdlineSlice[0])
@@ -987,13 +987,13 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) (*MemoryInfoSta
 		case "PPid", "Ppid":
 			pval, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.parent = int32(pval)
 		case "Tgid":
 			pval, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.tgid = int32(pval)
 		case "Uid":
@@ -1001,7 +1001,7 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) (*MemoryInfoSta
 			for _, i := range strings.Split(value, "\t") {
 				v, err := strconv.ParseInt(i, 10, 32)
 				if err != nil {
-					return p.memInfo,err
+					return p.memInfo, err
 				}
 				p.uids = append(p.uids, int32(v))
 			}
@@ -1010,111 +1010,111 @@ func (p *Process) fillFromStatusWithContext(ctx context.Context) (*MemoryInfoSta
 			for _, i := range strings.Split(value, "\t") {
 				v, err := strconv.ParseInt(i, 10, 32)
 				if err != nil {
-					return p.memInfo,err
+					return p.memInfo, err
 				}
 				p.gids = append(p.gids, int32(v))
 			}
 		case "Threads":
 			v, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.numThreads = int32(v)
 		case "voluntary_ctxt_switches":
 			v, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.numCtxSwitches.Voluntary = v
 		case "nonvoluntary_ctxt_switches":
 			v, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.numCtxSwitches.Involuntary = v
 		case "VmRSS":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.RSS = v * 1024
 		case "VmSize":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.VMS = v * 1024
 		case "VmSwap":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.Swap = v * 1024
 		case "VmHWM":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.HWM = v * 1024
 		case "VmData":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.Data = v * 1024
 		case "VmStk":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.Stack = v * 1024
 		case "VmLck":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.memInfo.Locked = v * 1024
 		case "SigPnd":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.sigInfo.PendingThread = v
 		case "ShdPnd":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.sigInfo.PendingProcess = v
 		case "SigBlk":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.sigInfo.Blocked = v
 		case "SigIgn":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.sigInfo.Ignored = v
 		case "SigCgt":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
-				return p.memInfo,err
+				return p.memInfo, err
 			}
 			p.sigInfo.Caught = v
 		}
 
 	}
-	return p.memInfo,nil
+	return p.memInfo, nil
 }
 
 func (p *Process) fillFromTIDStatWithContext(ctx context.Context, tid int32) (uint64, int32, *cpu.TimesStat, int64, uint32, int32, *PageFaultsStat, error) {
@@ -1162,7 +1162,7 @@ func (p *Process) fillFromTIDStatWithContext(ctx context.Context, tid int32) (ui
 	// docs).  Note: I am assuming at least Linux 2.6.18
 	iotime, err := strconv.ParseFloat(fields[i+40], 64)
 	if err != nil {
-		iotime = 0  // Ancient linux version, most likely
+		iotime = 0 // Ancient linux version, most likely
 	}
 
 	cpuTimes := &cpu.TimesStat{
