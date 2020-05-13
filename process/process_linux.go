@@ -439,11 +439,11 @@ func (p *Process) MemoryInfo() (*MemoryInfoStat, error) {
 }
 
 func (p *Process) MemoryInfoWithContext(ctx context.Context) (*MemoryInfoStat, error) {
-	meminfo, _, err := p.fillFromStatmWithContext(ctx)
+	err := p.fillFromStatusWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return meminfo, nil
+	return p.memInfo, nil
 }
 
 // MemoryInfoEx returns platform dependend memory information.
@@ -1162,7 +1162,7 @@ func (p *Process) fillFromTIDStatWithContext(ctx context.Context, tid int32) (ui
 	// docs).  Note: I am assuming at least Linux 2.6.18
 	iotime, err := strconv.ParseFloat(fields[i+40], 64)
 	if err != nil {
-		iotime = 0  // Ancient linux version, most likely
+		iotime = 0 // Ancient linux version, most likely
 	}
 
 	cpuTimes := &cpu.TimesStat{
